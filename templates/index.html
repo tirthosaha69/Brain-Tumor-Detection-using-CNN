@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Tumor Detection - MRI Analysis</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-bg: #0f0f23;
+            --secondary-bg: #1a1a2e;
+            --card-bg: #16213e;
+            --accent-blue: #4fc3f7;
+            --accent-green: #4caf50;
+            --accent-red: #f44336;
+            --accent-orange: #ff9800;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b7c3;
+            --border-color: #2d3748;
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 20px;
+            background: var(--gradient);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .card h2 {
+            color: var(--accent-blue);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--accent-blue);
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent-green);
+            background: rgba(76, 175, 80, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--accent-green);
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--accent-blue);
+            margin-bottom: 15px;
+            transition: color 0.3s ease;
+        }
+
+        .upload-area:hover .upload-icon {
+            color: var(--accent-green);
+        }
+
+        .file-input {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .upload-btn {
+            background: var(--gradient);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            width: 100%;
+            max-width: 200px;
+            margin: 15px auto 0;
+            display: block;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .prediction-result {
+            background: var(--secondary-bg);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            border-left: 4px solid var(--accent-green);
+        }
+
+        .result-image {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .confidence-bar {
+            background: var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            height: 8px;
+            margin: 10px 0;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 1s ease;
+        }
+
+        .tumor-info {
+            background: var(--secondary-bg);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .probability-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .prob-item {
+            background: var(--secondary-bg);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .prob-item.highest {
+            border-color: var(--accent-green);
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .model-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: var(--secondary-bg);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .history-section {
+            margin-top: 40px;
+        }
+
+        .history-item {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .history-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .history-details {
+            flex-grow: 1;
+        }
+
+        .history-filename {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .history-prediction {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .history-confidence {
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .alert-error {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        .tumor-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .tumor-type {
+            background: var(--secondary-bg);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid;
+        }
+
+        .clear-history-btn {
+            background: var(--accent-red);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .clear-history-btn:hover {
+            background: #d32f2f;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--accent-blue);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-brain"></i> Brain Tumor Detection System</h1>
+            <p>Advanced MRI analysis using deep learning to detect and classify brain tumors with 95.37% accuracy.
+                Upload an MRI scan to get instant results.</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-error fade-in">
+            <i class="fas fa-exclamation-triangle"></i>
+            {{ error }}
+        </div>
+        {% endif %}
+
+        {% if success %}
+        <div class="alert alert-success fade-in">
+            <i class="fas fa-check-circle"></i>
+            Image analyzed successfully!
+        </div>
+        {% endif %}
+
+        <div class="main-content">
+            <div class="card">
+                <h2><i class="fas fa-upload"></i> Upload MRI Scan</h2>
+                <form method="post" enctype="multipart/form-data" id="uploadForm">
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <h3>Drag & Drop MRI Image</h3>
+                        <p>or click to browse files</p>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 10px;">
+                            Supported formats: PNG, JPG, JPEG (Max 16MB)
+                        </p>
+                        <input type="file" name="file" accept=".png,.jpg,.jpeg" class="file-input" id="fileInput">
+                    </div>
+                    <button type="submit" class="upload-btn" id="analyzeBtn">
+                        <i class="fas fa-microscope"></i> Analyze Image
+                    </button>
+                </form>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing image...</p>
+                </div>
+
+                {% if filename %}
+                <div class="prediction-result fade-in">
+                    <h3><i class="fas fa-chart-line"></i> Analysis Results</h3>
+                    <img src="{{ url_for('static', filename='uploads/' + filename) }}" class="result-image"
+                        alt="Uploaded MRI">
+
+                    <div class="tumor-info" style="border-left-color: {{ class_info[pred_class]['color'] }};">
+                        <h4 style="color: {{ class_info[pred_class]['color'] }};">
+                            {{ class_info[pred_class]['name'] }}
+                        </h4>
+                        <p>{{ class_info[pred_class]['description'] }}</p>
+                        <p style="margin-top: 10px;">
+                            <strong>Confidence:</strong> {{ confidence }}%
+                            <span style="color: var(--text-secondary);">(File size: {{ file_size }})</span>
+                        </p>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill"
+                                style="width: {{ confidence }}%; background: {{ class_info[pred_class]['color'] }};">
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if all_probs %}
+                    <div class="probability-grid">
+                        {% for class_name, prob in all_probs.items() %}
+                        <div class="prob-item {% if class_name == pred_class %}highest{% endif %}">
+                            <h5>{{ class_info[class_name]['name'] }}</h5>
+                            <div class="stat-value" style="color: {{ class_info[class_name]['color'] }};">
+                                {{ prob }}%
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="card">
+                <h2><i class="fas fa-info-circle"></i> About This System</h2>
+
+                <div class="model-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ model_stats.accuracy }}%</div>
+                        <div class="stat-label">Model Accuracy</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ history|length }}</div>
+                        <div class="stat-label">Images Analyzed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">4</div>
+                        <div class="stat-label">Tumor Types</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">CNN</div>
+                        <div class="stat-label">Model Type</div>
+                    </div>
+                </div>
+
+                <div class="tumor-types">
+                    {% for class_key, info in class_info.items() %}
+                    <div class="tumor-type" style="border-left-color: {{ info.color }};">
+                        <h4 style="color: {{ info.color }};">{{ info.name }}</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary);">{{ info.description }}</p>
+                        <p style="margin-top: 10px; font-weight: 600;">
+                            Severity:
+                            <span
+                                style="color: {% if info.severity == 'High' %}var(--accent-red){% elif info.severity == 'Medium' %}var(--accent-orange){% else %}var(--accent-green){% endif %};">
+                                {{ info.severity }}
+                            </span>
+                        </p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: var(--secondary-bg); border-radius: 10px;">
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <strong>Disclaimer:</strong> This tool is for educational and research purposes only.
+                        Always consult with qualified medical professionals for proper diagnosis and treatment.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {% if history %}
+        <div class="history-section card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2><i class="fas fa-history"></i> Recent Analyses</h2>
+                <a href="{{ url_for('clear_history') }}" class="clear-history-btn">
+                    <i class="fas fa-trash"></i> Clear History
+                </a>
+            </div>
+
+            {% for item in history %}
+            <div class="history-item fade-in">
+                <img src="{{ url_for('static', filename='uploads/' + item.filename) }}" class="history-image"
+                    alt="MRI scan">
+                <div class="history-details">
+                    <div class="history-filename">{{ item.original_filename or item.filename }}</div>
+                    <div class="history-prediction">
+                        {{ class_info[item.class]['name'] }} • {{ item.timestamp }}
+                        {% if item.file_size %} • {{ item.file_size }}{% endif %}
+                    </div>
+                </div>
+                <div class="history-confidence"
+                    style="background: {{ class_info[item.class]['color'] }}20; color: {{ class_info[item.class]['color'] }};">
+                    {{ item.confidence }}%
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadForm = document.getElementById('uploadForm');
+        const loading = document.getElementById('loading');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+
+        // Only trigger file input when clicking the upload area, not the button
+        uploadArea.addEventListener('click', (e) => {
+            // Don't trigger if clicking the button
+            if (e.target.closest('.upload-btn')) {
+                return;
+            }
+            fileInput.click();
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                updateFileName(files[0].name);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                updateFileName(e.target.files[0].name);
+            }
+        });
+
+        function updateFileName(filename) {
+            const icon = uploadArea.querySelector('.upload-icon');
+            const text = uploadArea.querySelector('h3');
+            icon.className = 'fas fa-file-image upload-icon';
+            text.textContent = filename;
+        }
+
+        uploadForm.addEventListener('submit', () => {
+            loading.style.display = 'block';
+            uploadArea.style.display = 'none';
+        });
+
+        // Animate confidence bars
+        window.addEventListener('load', () => {
+            const confidenceFills = document.querySelectorAll('.confidence-fill');
+            confidenceFills.forEach(fill => {
+                const width = fill.style.width;
+                fill.style.width = '0%';
+                setTimeout(() => {
+                    fill.style.width = width;
+                }, 500);
+            });
+        });
+
+        // Add smooth scroll to results
+        {% if filename %}
+        setTimeout(() => {
+            document.querySelector('.prediction-result').scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }, 100);
+        {% endif %}
+
+        // File size validation
+        fileInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const maxSize = 16 * 1024 * 1024; // 16MB
+                if (file.size > maxSize) {
+                    alert('File size must be less than 16MB');
+                    this.value = '';
+                    return;
+                }
+
+                // Validate file type
+                const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Please select a PNG, JPG, or JPEG image file');
+                    this.value = '';
+                    return;
+                }
+            }
+        });
+
+        // Add loading animation to upload button
+        uploadForm.addEventListener('submit', function (e) {
+            if (!fileInput.files.length) {
+                e.preventDefault();
+                alert('Please select an image file first');
+                return;
+            }
+
+            analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+            analyzeBtn.disabled = true;
+            loading.style.display = 'block';
+        });
+
+        // Add hover effects to history items
+        document.querySelectorAll('.history-item').forEach(item => {
+            item.addEventListener('mouseenter', function () {
+                this.style.transform = 'translateX(10px)';
+            });
+
+            item.addEventListener('mouseleave', function () {
+                this.style.transform = 'translateX(0)';
+            });
+        });
+
+        // Add click to view full image functionality
+        document.querySelectorAll('.result-image, .history-image').forEach(img => {
+            img.style.cursor = 'pointer';
+            img.addEventListener('click', function () {
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.9);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 1000;
+                    cursor: pointer;
+                `;
+
+                const modalImg = document.createElement('img');
+                modalImg.src = this.src;
+                modalImg.style.cssText = `
+                    max-width: 90%;
+                    max-height: 90%;
+                    border-radius: 10px;
+                    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+                `;
+
+                modal.appendChild(modalImg);
+                document.body.appendChild(modal);
+
+                modal.addEventListener('click', () => {
+                    document.body.removeChild(modal);
+                });
+            });
+        });
+
+        // Add tooltips for tumor types
+        document.querySelectorAll('.tumor-type').forEach(type => {
+            type.addEventListener('mouseenter', function () {
+                this.style.transform = 'scale(1.02)';
+                this.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.3)';
+            });
+
+            type.addEventListener('mouseleave', function () {
+                this.style.transform = 'scale(1)';
+                this.style.boxShadow = 'none';
+            });
+        });
+
+        // Add copy functionality for results
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.createElement('div');
+                toast.textContent = 'Copied to clipboard!';
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: var(--accent-green);
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    z-index: 1000;
+                    animation: fadeIn 0.3s ease;
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => document.body.removeChild(toast), 2000);
+            });
+        }
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            // Ctrl/Cmd + U to focus upload
+            if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+                e.preventDefault();
+                fileInput.click();
+            }
+
+            // Escape to close modal
+            if (e.key === 'Escape') {
+                const modal = document.querySelector('[style*="position: fixed"]');
+                if (modal) modal.click();
+            }
+        });
+
+        // Add progressive loading for images
+        document.querySelectorAll('img').forEach(img => {
+            img.addEventListener('load', function () {
+                this.style.opacity = '0';
+                this.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => this.style.opacity = '1', 100);
+            });
+        });
+
+        // Update page title with result
+        {% if pred_class %}
+        document.title = 'Brain Tumor Detection - {{ class_info[pred_class]["name"] }} Detected';
+        {% endif %}
+
+        console.log('🧠 Brain Tumor Detection System v2.0 loaded successfully!');
+        console.log('📊 Model Accuracy: {{ model_stats.accuracy }}%');
+        console.log('🔬 Ready for MRI analysis...');
+    </script>
+</body>
+
+</html>
